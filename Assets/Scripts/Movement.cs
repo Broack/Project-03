@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class Movement : MonoBehaviour
 {
+    public Animator playerAnimator; 
+
+
     public float Player_Walk_Speed;
     public float JumpVelocity;
     public float DoubleJump;
@@ -49,7 +52,12 @@ public class Movement : MonoBehaviour
 
         if (direction != 0f)
         {
+            playerAnimator.SetBool("isRunning", true);
             transform.localScale = new Vector2(Mathf.Abs(transform.localScale.x) * direction, transform.localScale.y);
+        }
+        else
+        {
+            playerAnimator.SetBool("isRunning", false);
         }
 
         if (Input.GetKeyDown(JumpKey))
@@ -64,11 +72,14 @@ public class Movement : MonoBehaviour
         //doubleJumptimer
         if (_isGrounded)
         {
+            playerAnimator.SetBool("isFlying", false);
+            playerAnimator.SetBool("isJumping", false);
             DoubleJumpTimer = DoubleJump;
         }
         else
         {
-            if( DoubleJumpTimer > 0f)
+            playerAnimator.SetBool("isJumping", true);
+            if ( DoubleJumpTimer > 0f)
             {
                 DoubleJumpTimer -= Time.deltaTime;
             }
@@ -106,9 +117,11 @@ public class Movement : MonoBehaviour
             {
                 Time.timeScale = 0;
                 _BashableObj.transform.localScale = new Vector2(1.4f, 1.4f);
+                SoundManager.PlaySound("Hold");
                 Arrow.SetActive(true);
                 Arrow.transform.position = _BashableObj.transform.position;
                 isChosingDir = true;
+
             }
             else if (isChosingDir && Input.GetKeyUp(KeyCode.Mouse1))
             {
@@ -120,16 +133,10 @@ public class Movement : MonoBehaviour
                 transform.position = _BashableObj.transform.position;
                 BashDir = Camera.main.ScreenToWorldPoint(Input.mousePosition) - transform.position;
                 BashDir.z = 0;
-               if (BashDir.x > 0)
-                {
-                    transform.eulerAngles = new Vector3(0, 180, 0);
-                }
-                else
-                {
-                    transform.eulerAngles = new Vector3(0, 0, 0);
-                }
                 BashDir = BashDir.normalized;
                 _BashableObj.GetComponent<Rigidbody2D>().AddForce(-BashDir * 50, ForceMode2D.Impulse);
+                playerAnimator.SetBool("isFlying", true);
+                SoundManager.PlaySound("Fly");
                 Arrow.SetActive(false);
             }
 
@@ -144,11 +151,13 @@ public class Movement : MonoBehaviour
         {
             if (BashTime > 0)
             {
+                
                 BashTime -= Time.deltaTime;
                 rb.velocity = BashDir * BashPower * Time.deltaTime;
             }
             else
             {
+                
                 isBashing = false;
                 BashTime = BashTimeReset;
                 rb.velocity = new Vector2(rb.velocity.x, 0);
